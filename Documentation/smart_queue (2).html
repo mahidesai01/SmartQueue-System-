@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartQueue — Digital Token System</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --p1: #0d0a1a;
+    --p2: #1a1035;
+    --p3: #2d1b69;
+    --p4: #4c2fad;
+    --p5: #7c5ce8;
+    --p6: #a78bfa;
+    --p7: #c4b5fd;
+    --p8: #ede9fe;
+    --gold: #f0c040;
+    --gold2: #fde68a;
+    --white: #ffffff;
+    --glass: rgba(255,255,255,0.06);
+    --glass2: rgba(255,255,255,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--p1);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated starfield background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(76,47,173,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(124,92,232,0.2) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 60% at 50% 50%, rgba(29,16,78,0.6) 0%, transparent 80%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Floating orbs ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.18;
+    pointer-events: none;
+    z-index: 0;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 400px; height: 400px; background: var(--p5); top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 300px; height: 300px; background: var(--gold); bottom: 10%; right: -80px; animation-delay: 3s; }
+  .orb3 { width: 250px; height: 250px; background: var(--p4); top: 50%; left: 30%; animation-delay: 6s; }
+
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(30px, 20px) scale(1.08); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.4rem 3rem;
+    border-bottom: 0.5px solid rgba(167,139,250,0.2);
+    backdrop-filter: blur(20px);
+    background: rgba(13,10,26,0.6);
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--p6);
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    color: var(--p7);
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--white); }
+  .nav-badge {
+    background: var(--p4);
+    color: var(--p7);
+    font-size: 0.75rem;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    border: 0.5px solid var(--p5);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .nav-badge:hover { background: var(--p5); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 5rem 2rem 3rem;
+  }
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 0.5px solid rgba(240,192,64,0.3);
+    padding: 0.4rem 1.2rem;
+    border-radius: 999px;
+    margin-bottom: 1.8rem;
+    animation: fadeUp 0.7s ease both;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 300;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--white);
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--p6);
+  }
+  .hero-sub {
+    margin: 1.5rem auto 0;
+    max-width: 520px;
+    font-size: 1rem;
+    color: var(--p7);
+    font-weight: 300;
+    line-height: 1.7;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  /* ── IMAGE STRIP ── */
+  .img-strip {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    padding: 2.5rem 2rem;
+    overflow: hidden;
+    animation: fadeUp 0.9s 0.3s ease both;
+  }
+  .img-card {
+    flex: 0 0 180px;
+    height: 120px;
+    border-radius: 16px;
+    border: 0.5px solid rgba(167,139,250,0.25);
+    overflow: hidden;
+    position: relative;
+    background: var(--glass);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.3s, border-color 0.3s;
+    cursor: pointer;
+  }
+  .img-card:hover { transform: translateY(-6px); border-color: var(--p5); }
+  .img-card .ic-icon {
+    font-size: 2rem;
+    filter: grayscale(0.2);
+  }
+  .img-card .ic-label {
+    font-size: 0.72rem;
+    color: var(--p7);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .img-card.active-card { border-color: var(--gold); background: rgba(240,192,64,0.08); }
+
+  /* ── MAIN QUEUE PANEL ── */
+  .queue-section {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 4rem;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 400;
+    color: var(--p6);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── TOKEN DISPLAY ── */
+  .token-hero {
+    background: var(--glass);
+    border: 0.5px solid rgba(167,139,250,0.3);
+    border-radius: 24px;
+    padding: 2.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+  .token-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; left: 50%;
+    transform: translateX(-50%);
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(124,92,232,0.25), transparent 70%);
+    pointer-events: none;
+  }
+  .now-serving-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--p6);
+    margin-bottom: 0.6rem;
+  }
+  .now-serving-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 6rem;
+    font-weight: 300;
+    color: var(--gold);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(240,192,64,0.3);
+    transition: all 0.4s;
+  }
+  .now-serving-dept {
+    font-size: 0.85rem;
+    color: var(--p7);
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+  .stat-card {
+    background: var(--glass);
+    border: 0.5px solid rgba(167,139,250,0.2);
+    border-radius: 16px;
+    padding: 1.2rem;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 400;
+    color: var(--p6);
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--p7);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 0.3rem;
+  }
+
+  /* ── TOKEN INPUT SECTION ── */
+  .token-lookup {
+    background: var(--glass);
+    border: 0.5px solid rgba(167,139,250,0.25);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s 0.6s ease both;
+  }
+  .lookup-title {
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--p6);
+    margin-bottom: 1.2rem;
+  }
+  .lookup-row {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+  }
+  .token-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid rgba(167,139,250,0.35);
+    border-radius: 12px;
+    padding: 0.85rem 1.2rem;
+    color: var(--white);
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    letter-spacing: 0.08em;
+    transition: border-color 0.2s;
+  }
+  .token-input::placeholder { color: rgba(167,139,250,0.4); }
+  .token-input:focus { border-color: var(--p5); }
+  .btn-check {
+    background: var(--p4);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    padding: 0.85rem 1.6rem;
+    font-size: 0.88rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+  .btn-check:hover { background: var(--p5); }
+  .btn-check:active { transform: scale(0.97); }
+
+  /* ── RESULT CARD ── */
+  .result-card {
+    background: rgba(76,47,173,0.15);
+    border: 0.5px solid var(--p5);
+    border-radius: 16px;
+    padding: 1.4rem 1.6rem;
+    margin-top: 1rem;
+    display: none;
+  }
+  .result-card.show { display: block; animation: fadeUp 0.4s ease both; }
+  .result-token-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3rem;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .result-info { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 1rem; }
+  .result-item label { font-size: 0.7rem; color: var(--p6); letter-spacing: 0.1em; text-transform: uppercase; display: block; }
+  .result-item span { font-size: 1rem; color: var(--white); font-weight: 400; }
+
+  /* ── QUEUE LIST ── */
+  .queue-list-wrap {
+    background: var(--glass);
+    border: 0.5px solid rgba(167,139,250,0.2);
+    border-radius: 20px;
+    padding: 1.5rem;
+    animation: fadeUp 0.8s 0.7s ease both;
+  }
+  .queue-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .queue-list-title {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--p6);
+  }
+  .live-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #4ade80;
+  }
+  .live-dot::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: pulse-dot 1.5s ease infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .queue-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    border: 0.5px solid transparent;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .queue-item:hover { background: var(--glass2); }
+  .queue-item.current {
+    background: rgba(240,192,64,0.1);
+    border-color: rgba(240,192,64,0.35);
+  }
+  .qi-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    color: var(--gold);
+    width: 60px;
+  }
+  .qi-num.normal { color: var(--p6); }
+  .qi-info { flex: 1; }
+  .qi-name { font-size: 0.88rem; color: var(--white); }
+  .qi-dept { font-size: 0.72rem; color: var(--p7); letter-spacing: 0.05em; margin-top: 2px; }
+  .qi-wait {
+    font-size: 0.78rem;
+    color: var(--p6);
+    text-align: right;
+  }
+  .qi-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+    display: inline-block;
+  }
+  .badge-now { background: rgba(240,192,64,0.15); color: var(--gold); border: 0.5px solid rgba(240,192,64,0.4); }
+  .badge-wait { background: rgba(124,92,232,0.15); color: var(--p6); border: 0.5px solid rgba(124,92,232,0.3); }
+
+  /* ── NEW TOKEN BUTTON ── */
+  .get-token-wrap {
+    text-align: center;
+    padding: 2rem 0 0;
+    animation: fadeUp 0.8s 0.8s ease both;
+  }
+  .btn-get-token {
+    background: linear-gradient(135deg, var(--p4), var(--p5));
+    color: var(--white);
+    border: none;
+    border-radius: 999px;
+    padding: 1rem 2.5rem;
+    font-size: 0.95rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 4px 24px rgba(124,92,232,0.3);
+  }
+  .btn-get-token:hover { opacity: 0.9; transform: translateY(-2px); }
+  .btn-get-token:active { transform: scale(0.97); }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem;
+    font-size: 0.75rem;
+    color: rgba(167,139,250,0.4);
+    letter-spacing: 0.05em;
+    border-top: 0.5px solid rgba(167,139,250,0.1);
+  }
+
+  /* ── MODAL ── */
+  .modal-wrap {
+    position: relative;
+    z-index: 1;
+    display: none;
+    justify-content: center;
+    padding: 0 1.5rem 2rem;
+  }
+  .modal-wrap.show { display: flex; animation: fadeUp 0.4s ease both; }
+  .modal {
+    background: var(--p2);
+    border: 0.5px solid var(--p5);
+    border-radius: 24px;
+    padding: 2.5rem;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal-token {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 5rem;
+    color: var(--gold);
+    line-height: 1;
+    margin: 1rem 0 0.5rem;
+  }
+  .modal-msg { font-size: 0.88rem; color: var(--p7); line-height: 1.6; }
+  .btn-close {
+    margin-top: 1.5rem;
+    background: transparent;
+    border: 0.5px solid var(--p5);
+    color: var(--p6);
+    border-radius: 999px;
+    padding: 0.6rem 1.8rem;
+    font-size: 0.82rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-close:hover { background: var(--glass); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    nav { padding: 1rem 1.2rem; }
+    .nav-links { display: none; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .img-strip { gap: 0.6rem; }
+    .img-card { flex: 0 0 130px; }
+    .now-serving-num { font-size: 4.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Smart<span>Queue</span></div>
+  <ul class="nav-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Services</a></li>
+    <li><a href="#">My Token</a></li>
+    <li><a href="#">Help</a></li>
+  </ul>
+  <div class="nav-badge" id="navStatus">● Live</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">Digital Queue Management System</div>
+  <h1>Your time is <em>precious.</em><br>Wait smarter.</h1>
+  <p class="hero-sub">Real-time token tracking for government offices, banks, and public services — know your turn before you arrive.</p>
+</div>
+
+<!-- IMAGE STRIP -->
+<div class="img-strip">
+  <div class="img-card active-card" onclick="setDept('Mamlatdar Office')">
+    <div class="ic-icon">🏛️</div>
+    <div class="ic-label">Mamlatdar</div>
+  </div>
+  <div class="img-card" onclick="setDept('Bank Counter')">
+    <div class="ic-icon">🏦</div>
+    <div class="ic-label">Bank</div>
+  </div>
+  <div class="img-card" onclick="setDept('RTO Office')">
+    <div class="ic-icon">🚗</div>
+    <div class="ic-label">RTO</div>
+  </div>
+  <div class="img-card" onclick="setDept('Health Centre')">
+    <div class="ic-icon">🏥</div>
+    <div class="ic-label">Health</div>
+  </div>
+  <div class="img-card" onclick="setDept('Passport Seva')">
+    <div class="ic-icon">📋</div>
+    <div class="ic-label">Passport</div>
+  </div>
+</div>
+
+<!-- QUEUE SECTION -->
+<div class="queue-section">
+
+  <!-- Now Serving -->
+  <div class="token-hero">
+    <div class="now-serving-label">Now serving at</div>
+    <div id="deptName" style="font-size:0.82rem;color:var(--gold);letter-spacing:0.1em;margin-bottom:0.8rem;">MAMLATDAR OFFICE</div>
+    <div class="now-serving-num" id="currentToken">007</div>
+    <div class="now-serving-dept">Counter 1 — General Services</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val" id="statWaiting">12</div>
+      <div class="stat-label">Waiting</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statAvg">~8</div>
+      <div class="stat-label">Avg wait (min)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="statDone">43</div>
+      <div class="stat-label">Served today</div>
+    </div>
+  </div>
+
+  <!-- Token Lookup -->
+  <div class="token-lookup">
+    <div class="lookup-title">Check your token status</div>
+    <div class="lookup-row">
+      <input class="token-input" id="tokenInput" type="number" placeholder="Enter your token number..." min="1" max="999" />
+      <button class="btn-check" onclick="checkToken()">Check Status</button>
+    </div>
+    <div class="result-card" id="resultCard">
+      <div style="display:flex;align-items:baseline;gap:1rem;">
+        <div class="result-token-num" id="resToken">—</div>
+        <div id="resBadge"></div>
+      </div>
+      <div class="result-info">
+        <div class="result-item"><label>Department</label><span id="resDept">—</span></div>
+        <div class="result-item"><label>Position in queue</label><span id="resPos">—</span></div>
+        <div class="result-item"><label>Est. wait time</label><span id="resWait">—</span></div>
+        <div class="result-item"><label>Status</label><span id="resStatus">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Queue -->
+  <div class="queue-list-wrap">
+    <div class="queue-list-header">
+      <div class="queue-list-title">Live queue</div>
+      <div class="live-dot">Live</div>
+    </div>
+    <div id="queueList"></div>
+  </div>
+
+  <!-- Get Token -->
+  <div class="get-token-wrap">
+    <button class="btn-get-token" onclick="getNewToken()">Get New Token</button>
+    <p style="margin-top:0.8rem;font-size:0.75rem;color:var(--p7);">ESP32 will print your token slip automatically</p>
+  </div>
+
+</div>
+
+<!-- NEW TOKEN MODAL -->
+<div class="modal-wrap" id="modalWrap">
+  <div class="modal">
+    <div style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--p6);">Your token number</div>
+    <div class="modal-token" id="modalToken">—</div>
+    <div style="font-size:0.8rem;color:var(--p6);margin-bottom:0.5rem;" id="modalDept">—</div>
+    <div class="modal-msg" id="modalMsg">—</div>
+    <button class="btn-close" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<footer>SmartQueue © 2025 — ESP32 Firebase Real-time System &nbsp;|&nbsp; Designed for Government & Banking Services</footer>
+
+<script>
+  let currentServing = 7;
+  let totalIssued = 19;
+  let currentDept = 'Mamlatdar Office';
+  let served = 43;
+
+  const queue = [
+    { token: 7,  name: 'Current',         dept: currentDept, wait: 0,  current: true  },
+    { token: 8,  name: 'Token 008',        dept: currentDept, wait: 8,  current: false },
+    { token: 9,  name: 'Token 009',        dept: currentDept, wait: 16, current: false },
+    { token: 10, name: 'Token 010',        dept: currentDept, wait: 24, current: false },
+    { token: 11, name: 'Token 011',        dept: currentDept, wait: 32, current: false },
+    { token: 12, name: 'Token 012',        dept: currentDept, wait: 40, current: false },
+  ];
+
+  function renderQueue() {
+    const el = document.getElementById('queueList');
+    el.innerHTML = queue.map(q => `
+      <div class="queue-item ${q.current ? 'current' : ''}">
+        <div class="qi-num ${q.current ? '' : 'normal'}">T${String(q.token).padStart(3,'0')}</div>
+        <div class="qi-info">
+          <div class="qi-name">${q.current ? 'Now serving' : q.name}</div>
+          <div class="qi-dept">${q.dept}</div>
+        </div>
+        <div class="qi-wait">
+          ${q.current
+            ? '<span class="qi-badge badge-now">Serving now</span>'
+            : `<div>${q.wait} min</div><span class="qi-badge badge-wait">Waiting</span>`}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function setDept(dept) {
+    currentDept = dept;
+    document.getElementById('deptName').textContent = dept.toUpperCase();
+    document.querySelectorAll('.img-card').forEach(c => c.classList.remove('active-card'));
+    event.currentTarget.classList.add('active-card');
+    queue.forEach(q => q.dept = dept);
+    renderQueue();
+  }
+
+  function checkToken() {
+    const val = parseInt(document.getElementById('tokenInput').value);
+    const card = document.getElementById('resultCard');
+    if (!val || val < 1) { card.classList.remove('show'); return; }
+
+    const pos = val - currentServing;
+    const wait = pos <= 0 ? 0 : pos * 8;
+    const isDone = val < currentServing;
+    const isCurrent = val === currentServing;
+
+    document.getElementById('resToken').textContent = 'T' + String(val).padStart(3,'0');
+    document.getElementById('resDept').textContent = currentDept;
+    document.getElementById('resPos').textContent = isDone ? 'Completed' : isCurrent ? 'Your turn!' : `${pos} ahead`;
+    document.getElementById('resWait').textContent = isDone ? '—' : isCurrent ? 'Now!' : `~${wait} minutes`;
+    document.getElementById('resStatus').textContent = isDone ? 'Done ✓' : isCurrent ? 'Serving now' : 'Waiting';
+    document.getElementById('resBadge').innerHTML = isCurrent
+      ? '<span class="qi-badge badge-now">Your turn!</span>'
+      : isDone
+        ? '<span class="qi-badge" style="background:rgba(74,222,128,0.1);color:#4ade80;border:0.5px solid rgba(74,222,128,0.3);">Done</span>'
+        : '<span class="qi-badge badge-wait">Waiting</span>';
+
+    card.classList.add('show');
+  }
+
+  function getNewToken() {
+    totalIssued++;
+    const token = totalIssued;
+    const pos = token - currentServing;
+    const wait = pos * 8;
+
+    queue.push({ token, name: `Token ${String(token).padStart(3,'0')}`, dept: currentDept, wait, current: false });
+    document.getElementById('statWaiting').textContent = queue.filter(q => !q.current).length;
+    renderQueue();
+
+    document.getElementById('modalToken').textContent = 'T' + String(token).padStart(3,'0');
+    document.getElementById('modalDept').textContent = currentDept;
+    document.getElementById('modalMsg').textContent =
+      `You are number ${pos} in queue. Estimated wait: ~${wait} minutes. Please be present when your number is called.`;
+    document.getElementById('modalWrap').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('modalWrap').classList.remove('show');
+  }
+
+  function advanceQueue() {
+    if (queue.length === 0) return;
+    queue.shift();
+    if (queue.length > 0) {
+      queue[0].current = true;
+      queue[0].wait = 0;
+      currentServing++;
+      served++;
+    }
+    queue.forEach((q, i) => { if (i > 0) q.wait = i * 8; });
+    document.getElementById('currentToken').textContent = String(currentServing).padStart(3,'0');
+    document.getElementById('statWaiting').textContent = Math.max(0, queue.filter(q=>!q.current).length);
+    document.getElementById('statDone').textContent = served;
+    renderQueue();
+  }
+
+  renderQueue();
+  setInterval(advanceQueue, 15000);
+  setInterval(() => {
+    document.getElementById('statAvg').textContent = '~' + (6 + Math.floor(Math.random() * 4));
+  }, 8000);
+</script>
+</body>
+</html>
